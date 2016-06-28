@@ -10,11 +10,22 @@ typedef uint8_t opcode; //for use in the equation tree as function identifiers
 
 //Consts, user-defined
 #define treeDepth 1
-#define numNodes 1<<treeDepth-1
-#define numVars 1
+#define numNodes 3
+#define numPoints 10
+#define numVars 2
 #define numOps 4
-const byte x[numVars] = {2}; //the input
-const num y = 1; //the output
+const byte x[numPoints][numVars] = {{1,5},
+                                    {2,3},
+                                    {3,128},
+                                    {4,16},
+                                    {5,0},
+                                    {6,18},
+                                    {7,36},
+                                    {8,81},
+                                    {9,250},
+                                    {10,200}}; //the input
+
+const num y[numPoints] = {6,5,131,20,5,24,43,89,259,210}; //the output
 
 //Define the tree struct
 typedef uint8_t ptr;
@@ -68,12 +79,12 @@ num mul(num a, num b)
 }
 
 //Recursive tree evaluator
-num eval(node root)
+num eval(node root, byte x_idx)
 {
-  if (root.op == var_id) return x[root.val];
+  if (root.op == var_id) return x[x_idx][root.val];
   if (root.op == const_id) return root.val;
 
-  num a = eval(nodes[root.a]); num b = eval(nodes[root.b]);
+  num a = eval(nodes[root.a],x_idx); num b = eval(nodes[root.b],x_idx);
   switch (root.op){
     case 2:
       return add(a, b);
@@ -90,7 +101,7 @@ int main()
   nodes[0].op = nondet_char();
   nodes[0].a = 1;
   nodes[0].b = 2;
-  __CPROVER_assume(nodes[0].op < numOps);
+  __CPROVER_assume(nodes[0].op > 1 && nodes[0].op < numOps);
   __CPROVER_assume(!(nodes[0].op == 0 && nodes[0].val >= numVars));
 
   nodes[1].val = nondet_uchar();
@@ -98,10 +109,21 @@ int main()
   __CPROVER_assume(nodes[1].op < 2);
   __CPROVER_assume(!(nodes[1].op == 0 && nodes[1].val >= numVars));
 
-  nodes[2].val = 0;
-  nodes[2].op = 1;
+  nodes[2].val = nondet_uchar();
+  nodes[2].op = nondet_uchar();
   __CPROVER_assume(nodes[2].op < 2);
   __CPROVER_assume(!(nodes[2].op == 0 && nodes[2].val >= numVars));
-  
-  assert(eval(nodes[0])!=1);
+
+  #define root nodes[0]
+  assert(!(overflow == false &&
+           eval(root,0)==y[0] &&
+           eval(root,1)==y[1] &&
+           eval(root,2)==y[2] &&
+           eval(root,3)==y[3] &&
+           eval(root,4)==y[4] &&
+           eval(root,5)==y[5] &&
+           eval(root,6)==y[6] &&
+           eval(root,7)==y[7] &&
+           eval(root,8)==y[8] &&
+           eval(root,9)==y[9] ));
 }
