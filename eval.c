@@ -4,8 +4,6 @@
 #include "assert.h"
 #include "stdio.h"
 
-#define cbmc_assert(x,y) assert(!(x)||!(y))
-
 typedef uint16_t num;
 typedef uint8_t byte;
 typedef uint8_t opcode; //for use in the equation tree as function identifiers
@@ -13,7 +11,9 @@ typedef uint8_t opcode; //for use in the equation tree as function identifiers
 //Consts, user-defined
 #define treeDepth 1
 #define numNodes 1<<treeDepth-1
-const byte x[1] = {1}; //the input
+#define numVars 1
+#define numOps 4
+const byte x[numVars] = {2}; //the input
 const num y = 1; //the output
 
 //Define the tree struct
@@ -67,7 +67,7 @@ num mul(num a, num b)
   return 0;
 }
 
-//Recursive (implicitly stack-based) tree evaluator
+//Recursive tree evaluator
 num eval(node root)
 {
   if (root.op == var_id) return x[root.val];
@@ -87,18 +87,21 @@ num eval(node root)
 int main()
 {
   nodes[0].val = nondet_uchar();
-  nodes[0].op = nondet_uchar();
-  nodes[0].a == 1;
-  nodes[0].b == 2;
-  __CPROVER_assume(nodes[0].op < 4);
-  __CPROVER_assume(!(nodes[0].op == 0 && nodes[0].val > 0));
+  nodes[0].op = nondet_char();
+  nodes[0].a = 1;
+  nodes[0].b = 2;
+  __CPROVER_assume(nodes[0].op < numOps);
+  __CPROVER_assume(!(nodes[0].op == 0 && nodes[0].val >= numVars));
 
   nodes[1].val = nondet_uchar();
   nodes[1].op = nondet_uchar();
   __CPROVER_assume(nodes[1].op < 2);
+  __CPROVER_assume(!(nodes[1].op == 0 && nodes[1].val >= numVars));
 
-  nodes[2].val = nondet_uchar();
-  nodes[2].op = nondet_uchar();
+  nodes[2].val = 0;
+  nodes[2].op = 1;
   __CPROVER_assume(nodes[2].op < 2);
+  __CPROVER_assume(!(nodes[2].op == 0 && nodes[2].val >= numVars));
+  
   assert(eval(nodes[0])!=1);
 }
