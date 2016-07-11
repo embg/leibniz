@@ -43,7 +43,7 @@ num mul(num a, num b)
 //Recursive tree evaluator
 num eval(node root, byte x_idx)
 {
-  if (root.op == var_id) return x[x_idx][root.val];
+  if (root.op == var_id) return X[x_idx][root.val];
   if (root.op == const_id) return root.val;
 
   num a = eval(nodes[root.a],x_idx); num b = eval(nodes[root.b],x_idx);
