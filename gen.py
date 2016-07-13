@@ -2,7 +2,7 @@ import numpy as np
 def compile(X, y):
     assert(len(X.shape) == 2)
 
-    treeDepth = 3; numNodes = 2**(treeDepth+1)-1
+    treeDepth = 1; numNodes = 2**(treeDepth+1)-1
 
     includes = """
     #include "eval.h"
@@ -18,8 +18,8 @@ def compile(X, y):
                numNodes=numNodes,
                numPoints=len(y),
                numVars=X.shape[1],
-               numOps=2)
-                
+               numOps=4)
+
     def translateToC(array):
         return np.array2string(np.array(array),
                                separator=',').replace('[','{').replace(']','}')
@@ -28,7 +28,7 @@ def compile(X, y):
     const byte X[numPoints][numVars] = """ + translateToC(X) + ';'
 
     y_initializer = """
-    const byte y[numPoints] = """ + translateToC(y) + ';'
+    const num y[numPoints] = """ + translateToC(y) + ';'
 
     main = """
     int main(){
@@ -56,7 +56,7 @@ def compile(X, y):
     #define root nodes[0]
     assert(!(overflow==false &&
     """
-    for i in range(0, numNodes):
+    for i in range(0, len(y)):
         main += """
         eval(root,{num})==y[{num}] &&
         """.format(num=i)
@@ -71,6 +71,6 @@ def compile(X, y):
             open("eval.c").read()+
             main + '\n')
 
-X = np.array([np.arange(0,10,1)])
-y = X[0]*2
+X = np.array([np.arange(0,10,1)]).transpose()
+y = X[:,0]*2
 open('compiled.c','w').write(compile(X, y))
