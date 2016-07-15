@@ -1,14 +1,16 @@
 //Opcodes
-opcode var_id = 0; //i.e. index of the sequence, the independent variable n
-opcode const_id = 1;
-opcode add_id = 2;
-opcode mul_id = 3;
+#define var_id 0 //i.e. index of the sequence, the independent variable 
+#define const_id 1
+#define add_id 2
+#define mul_id 3
+#define neg_id 4
+#define pow_id 5
 
 //Vars
 node nodes[numNodes]; //the tree
-bool overflow = false; //overflow flag
+bool ArithmeticError = false; //ArithmeticError flag
 
-//Overflow-protected functions
+//ArithmeticError-protected functions
 byte highest(num a) //highest bit of a
 {
   if (a >> 15) return 15; if (a >> 14) return 14;
@@ -24,19 +26,35 @@ byte highest(num a) //highest bit of a
 
 num add(num a, num b)
 {
-  if (highest(a) < 15 && highest(b) < 15)
+  if (highest(a) < 63 && highest(b) < 63)
     return a+b;
   else
-    overflow = true;
+    ArithmeticError = true;
   return 0;
 }
 
 num mul(num a, num b)
 {
-  if (highest(a) + highest(b) < 15)
+  if (highest(a) + highest(b) < 63)
     return a*b;
   else
-    overflow = true;
+    ArithmeticError = true;
+  return 0;
+}
+
+num exp_by_squaring(num a, num b){
+  if (b == 0) return 1;
+  if (b == 1) return a;
+  if (b && 1) return mul(a,exp_by_squaring(mul(a,a), (b-1)>>1));
+  else return exp_by_squaring(mul(a,a), b>>1);
+}
+
+num pow(num a, num b)
+{
+  if (b>=0)
+    return exp_by_squaring(a, b);
+  else 
+    ArithmeticError = true;
   return 0;
 }
 
@@ -46,11 +64,16 @@ num eval(node root, byte x_idx)
   if (root.op == var_id) return X[x_idx][root.val];
   if (root.op == const_id) return root.val;
 
-  num a = eval(nodes[root.a],x_idx); num b = eval(nodes[root.b],x_idx);
+  num a = eval(nodes[root.a],x_idx);
+  if (root.op == neg_id) return -a;
+
+  num b = eval(nodes[root.b],x_idx);
   switch (root.op){
-    case 2:
-      return add(a, b);
-    case 3:
-      return mul(a, b);
+  case add_id:
+    return add(a, b);
+  case mul_id:
+    return mul(a, b);
+  case pow_id:
+    return pow(a, b);
   }
 }

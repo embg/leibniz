@@ -2,7 +2,8 @@ import numpy as np
 def compile(X, y):
     assert(len(X.shape) == 2)
 
-    treeDepth = 1; numNodes = 2**(treeDepth+1)-1
+    treeDepth = 2; numNodes = 2**(treeDepth+1)-1
+    numOps = 5
 
     includes = """
     #include "eval.h"
@@ -18,7 +19,7 @@ def compile(X, y):
                numNodes=numNodes,
                numPoints=len(y),
                numVars=X.shape[1],
-               numOps=4)
+               numOps=numOps)
 
     def translateToC(array):
         return np.array2string(np.array(array),
@@ -37,13 +38,14 @@ def compile(X, y):
         main += """
                    nodes[{num}].val = nondet_uchar();
                    nodes[{num}].op = nondet_uchar();
-                   __CPROVER_assume(!(nodes[{num}].op == 0 && nodes[{num}].val >= numVars));
+                   __CPROVER_assume(!(nodes[{num}].op == 0 && (nodes[{num}].val >= numVars ||
+                                                               nodes[{num}].val < 0)));
                 """.format(num=i)
         if i < numNodes//2:
             main += """
                        nodes[{num}].a = {a};
                        nodes[{num}].b = {b};
-                       __CPROVER_assume(nodes[{num}].op < numOps);
+                       __CPROVER_assume(nodes[{num}].op <= numOps);
                     """.format(num=i , a=2*i+1, b=2*i+2)
         else:
             main += """
@@ -54,7 +56,7 @@ def compile(X, y):
 
     main += """
     #define root nodes[0]
-    assert(!(overflow==false &&
+    assert(!(ArithmeticError==false &&
     """
     for i in range(0, len(y)):
         main += """
@@ -72,5 +74,5 @@ def compile(X, y):
             main + '\n')
 
 X = np.array([np.arange(0,10,1)]).transpose()
-y = X[:,0]*2
+y = X[:,0]**4
 open('compiled.c','w').write(compile(X, y))
