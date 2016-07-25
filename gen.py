@@ -3,6 +3,7 @@ def compile(X, y):
     assert(len(X.shape) == 2)
 
     treeDepth = 2; numNodes = 2**(treeDepth+1)-1
+
     numOps = 5
 
     includes = """
@@ -73,6 +74,8 @@ def compile(X, y):
             open("eval.c").read()+
             main + '\n')
 
+
 X = np.array([np.arange(0,10,1)]).transpose()
 y = X[:,0]**4
+
 open('compiled.c','w').write(compile(X, y))
